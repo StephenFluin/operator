@@ -1,18 +1,20 @@
-import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
-import { BehaviorSubject, Subject } from 'rxjs';
+import { ChangeDetectorRef, Component } from '@angular/core';
+import { BehaviorSubject } from 'rxjs';
 import { AbiManager } from '../abi-manager.service';
 import { CounterABI } from '../counter-abi';
 import { OperatorABI } from '../operator-abi';
-declare var Web3: any;
-declare var web3: any;
+import { ERC20Abi } from '../erc20-abi';
+import { ethers, Contract } from 'ethers';
+
+type MethodList = any[];
 
 @Component({
   selector: 'app-home',
   templateUrl: 'home.html',
 })
-export class HomeComponent implements OnInit {
+export class HomeComponent {
   contracts: { [key: string]: any } = {};
-  methods: any[] = [];
+  methods: MethodList = [];
   values: { [key: string]: any } = {};
 
   address: string = '';
@@ -20,105 +22,121 @@ export class HomeComponent implements OnInit {
 
   operatorABI = JSON.stringify(OperatorABI);
   counterABI = JSON.stringify(CounterABI);
+  ERC20Abi = JSON.stringify(ERC20Abi);
 
-  alchemyKovan = new Web3(
-    'https://eth-kovan.alchemyapi.io/v2/UmrlTq_9a6uDS-WQ6PNQsfyvroyHixvb'
-  );
-  metamask: any = new Web3((<any>window)['ethereum']);
+  provider = new ethers.providers.Web3Provider((<any>window)['ethereum']);
+  signer = this.provider.getSigner();
 
-  alchemySelectedContract: any;
-  metamaskSelectedContract: any;
+  selectedContract: ethers.Contract | null = null;
 
   ethereum = (<any>window)['ethereum'];
 
-  chainChanged: BehaviorSubject<number> = new BehaviorSubject<number>(0);
-  accountsChanged: BehaviorSubject<string[]> = new BehaviorSubject<string[]>([]);
-
+  chainChanged: BehaviorSubject<string> = new BehaviorSubject<string>('0');
+  accountsChanged: BehaviorSubject<string[]> = new BehaviorSubject<string[]>(
+    []
+  );
 
   constructor(
     public manager: AbiManager,
     public changeDetector: ChangeDetectorRef
   ) {
-    this.ethereum.on('chainChanged', (chainId: string) => {this.chainChanged.next(parseInt(chainId,16));});
-    this.ethereum.on('accountsChanged', (accounts: string[]) => {this.accountsChanged.next(accounts);});
-
-    this.ethereum.request({ method: 'eth_chainId' })
-    .then((chain: string) => {
-      this.chainChanged.next(parseInt(chain,16));
+    this.ethereum.on('chainChanged', (chainId: string) => {
+      console.log("chain changed to",chainId,"from",this.chainChanged.value)
+      this.chainChanged.next(chainId);
+      this.provider = new ethers.providers.Web3Provider((<any>window)['ethereum']);
+      this.selectedContract = null;
+      this.address = '';
+      this.methods = [];
+      this.changeDetector.detectChanges();
+    });
+    this.ethereum.on('accountsChanged', (accounts: string[]) => {
+      this.accountsChanged.next(accounts);
     });
 
+    this.provider.getNetwork().then((network) => {
+      this.chainChanged.next(`${network.chainId} (${network.name})`);
+    });
+    // Maybe shouldn't do this every time, @TODO
+    this.connect();
   }
 
   pick(abi: string, address: string) {
+    // console.log('about to pick!', abi, address);
     this.address = address;
 
-    this.alchemySelectedContract = new this.alchemyKovan.eth.Contract(
+    this.selectedContract = new Contract(
+      address,
       JSON.parse(abi),
-      address
-    );
-    this.metamaskSelectedContract = new this.metamask.eth.Contract(
-      JSON.parse(abi),
-      address
+      this.provider
     );
 
-    console.log(this.alchemySelectedContract);
-    // this.withdrawable = new Promise((resolve, reject) => {
-    //   this.selectedContract.methods
-    //     .withdrawable()
-    //     .call((err: string, result: string) => {
-    //       if (err) {
-    //         //console.log('withdrawable err', err);
-    //         reject(err);
-    //       } else {
-    //         //console.log('Withdrawable result', result);
-    //         resolve(result);
-    //       }
-    //     });
-    // });
     this.methods = JSON.parse(abi);
   }
 
   run(methodName: string, form: any) {
-    let activation: any;
+    if (!this.selectedContract) {
+      console.error('No contract selected');
+      return;
+    }
+    const chosenMethod = this.methods.find((x) => x.name == methodName);
+    if (!chosenMethod) {
+      console.error('No method specified');
+      return;
+    }
+    let activation: (...args: any[]) => Promise<any> = () => Promise.resolve();
     const args = Array.from(form).map((x: any) => x.value);
 
-    if (
-      this.methods.find((x) => x.name == methodName).stateMutability === 'view'
-    ) {
-      activation = this.metamaskSelectedContract.methods[methodName](
-        ...args
-      ).call;
-    } else {
-      for (let i = 0; i < args.length; i++) {
-        let methodABI = this.methods.find(
-          (method) => method.name === methodName
-        );
-        if (methodABI) {
-          console.log('found method', methodABI);
-          if (methodABI.inputs[i].type === 'bytes') {
-            args[i] = JSON.parse(args[i]);
-          }
-        }
+    // Set activation to the method depending on view or not view
+    // Check the method matching `methodName`
+    console.log(
+      'Searched ',
+      this.selectedContract.interface.fragments,
+      'for',
+      methodName,
+      'and found',
+      chosenMethod
+    );
+
+    for (let i = 0; i < args.length; i++) {
+      if (chosenMethod.inputs[i].type === 'bytes') {
+        args[i] = JSON.parse(args[i]);
       }
-      activation = this.metamaskSelectedContract.methods[methodName](
-        ...args
-      ).send;
     }
-    activation(
-      { from: '0x2232BF442f759Dd6D03601192707BA25A6C17Cf1' },
-      (err: string, result: string) => {
-        console.log('run of', methodName, 'returned', result, err);
-        // This promise exists so Angular Change Detection runs
+    console.log('args includes', args,'chosen method',chosenMethod);
+
+    let targetContract = this.selectedContract;
+    if (chosenMethod.stateMutability === 'view') {
+      console.log('calling without signer');
+    } else {
+      console.log('Connecting with signer');
+      targetContract = this.selectedContract.connect(this.signer);
+      console.log('target contract is now',targetContract);
+    }
+    targetContract[methodName](...args)
+      .then((result: string) => {
+        console.log('run of', methodName, 'returned', result);
+        // This forces Angular Change Detection
         this.values[methodName] = result;
         this.changeDetector.detectChanges();
-      }
-    );
+      })
+      .catch((err: any) => {
+        console.log('Contract error, are you on the wrong chain?');
+        let shownError = err.message;
+        if(err.error?.message) {
+          shownError = err.error.message;
+        }
+        if(err.error?.data?.message) {
+          shownError = err.error.data.message;
+        }
+        console.log("shown error is",shownError);
+        this.values[methodName] = `Error: ${shownError}`;
+      });
   }
-  connect() {
-    this.ethereum
-    .request({ method: 'eth_requestAccounts' });
+  async connect() {
+    const result = this.ethereum.request({ method: 'eth_requestAccounts' });
+    console.log('connect result is', result);
+    const accountList = await result;
+    console.log('and resolves to', accountList);
+    this.accountsChanged.next(accountList);
   }
-
-  ngOnInit(): void {}
-  ngAfterViewInit() {}
 }

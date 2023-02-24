@@ -4,10 +4,11 @@
 <select #select>
     <option>Choose your contract ABI</option>
     <option [value]="operatorABI">Chainlink Operator Contract</option>
-    <option [value]="counterABI" selected>Counter ABI</option>
+    <option [value]="counterABI">Counter ABI</option>
+    <option [value]="ERC20Abi" selected>ERC20 ABI</option>
     <option *ngFor="let abi of manager.abis" [value]="abi.abi">{{abi.name}}</option>
 </select>
-<input type="text" name="address" #targetAddress placeholder="Contract Address" value="0xb21085EcC5a61FFE4E08958307016107aEC6fE77"/>
+<input type="text" name="address" #targetAddress placeholder="Contract Address" value="0x0C04616EC0bE05BB5B51761Dab5167E10E6CA745"/>
 <button (click)="pick(select.value, targetAddress.value)">Connect</button>
 <p *ngIf="address">Contract Address is: {{address}};</p>
 
