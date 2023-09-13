@@ -14,6 +14,11 @@ import { ITSAbi } from './interchain-token-service-abi';
   template: `
     <h2>Deploy Token Managers</h2>
     <div>Currently connected as {{ address() }}</div>
+    <p>This is a tool to demonstrate the process of turning tokens into Interchain tokens!</p>
+    <p>Follow the steps:</p>
+    <p><strong>Step 1</strong> Deploy your tokens. Your tokens must be able to grant mint/burn permissions to the future Token Manager.</p>
+    <ol><li> Deploy to Chain 1</li><li> Deploy to Chain 2</li></ol>
+    <p><strong>Step 2</strong> Deploy token managers</p>
     <label>Token Manager Type <input type="number" value="1" #type /> </label>
     <label
       >Token Address
@@ -30,6 +35,9 @@ import { ITSAbi } from './interchain-token-service-abi';
       Create
     </button>
     <div *ngIf="params">{{ params }}</div>
+    <p><strong>Step 3</strong> Give permissions on your tokens to the token manager</p>
+    <p><strong>Step 4</strong> Approve the token manager to spend some of your tokens</p>
+    <p><strong>Step 5</strong> sendToken on the Token Manager!</p>
   `,
   styles: ['label {display:block;}'],
 })
