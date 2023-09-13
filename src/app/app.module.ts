@@ -5,6 +5,7 @@ import { RouterModule } from '@angular/router';
 import { AppComponent } from './app.component';
 import { HomeComponent } from './home/home';
 import { AbisComponent } from './abis/abis.component';
+import { DeployTokenManagerComponent } from './deploy-token-manager/deploy-token-manager.component';
 
 @NgModule({
   declarations: [AppComponent, HomeComponent, AbisComponent],
@@ -14,6 +15,7 @@ import { AbisComponent } from './abis/abis.component';
       { path: '', component: HomeComponent },
       { path: 'abis', component: AbisComponent },
     ]),
+    DeployTokenManagerComponent,
   ],
   providers: [],
   bootstrap: [AppComponent],
