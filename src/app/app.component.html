@@ -1,7 +1,19 @@
-<h1>Angular EVM Smart Contract Operator Tool</h1>
-<ul>
+<mat-toolbar color="primary"
+  ><h1>Angular EVM Smart Contract Operator Tool</h1>
+  </mat-toolbar
+>
+<mat-drawer-container>
+    <mat-drawer mode="side" opened>
+  <ul>
     <li><a routerLink="/">Home</a></li>
     <li><a routerLink="/abis">ABIs</a></li>
-</ul>
-<router-outlet></router-outlet>
-<app-deploy-token-manager />
+    <li><a routerLink="/token-managers">ITS Token Managers</a></li>
+  </ul>
+  </mat-drawer>
+<mat-drawer-content>
+    <div id="page">
+        <router-outlet></router-outlet>
+    </div>
+</mat-drawer-content>
+
+</mat-drawer-container>
