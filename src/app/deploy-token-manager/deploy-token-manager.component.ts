@@ -4,7 +4,13 @@ import { CommonModule } from '@angular/common';
 import { ethers, ContractFactory } from 'ethers';
 import { ITSAbi } from './interchain-token-service-abi';
 import { pTokenABI, pTokenBytecode } from './permissioned-token';
-import { ExplorerComponent, calculateChainName } from '../explorer/explorer.component';
+import { ExplorerComponent, calculateAxelarName } from '../explorer/explorer.component';
+
+// @TODO Fix this
+// import { AxelarQueryAPI, Environment } from '@axelar-network/axelarjs-sdk';
+// const sdk = new AxelarQueryAPI({
+//   environment: Environment.TESTNET,
+// });
 
 // BNB Token: 0x1d4EBf060EA1ad3ff7fdB20B09b644A0241cA9E9
 // Avalanche token: 0xAF37342e003E90DCa134A3dF76C52aeEFC4bA39d
@@ -28,7 +34,7 @@ export class DeployTokenManagerComponent {
 
   network = signal<number | null>(null);
 
-  calculateChainName = calculateChainName;
+  calculateAxelarName = calculateAxelarName;
 
   constructor() {
     this.ethereum.on('accountsChanged', (accounts: string[]) => {
@@ -59,6 +65,10 @@ export class DeployTokenManagerComponent {
     this.ITSContractWithSigner = this.ITSContract.connect(this.signer);
 
     this.network.set((await provider.getNetwork()).chainId);
+
+    // @TODO: Calculate remote gas cost
+    // const remoteGas = await sdk.estimateGasFee('Avalanche', 'binance', 'AVAX');
+    // console.log('estimated gas fee includes', remoteGas);
   }
 
   async createToken(tokenNumber: 1 | 2) {
