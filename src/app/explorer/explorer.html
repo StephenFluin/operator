@@ -1,0 +1,8 @@
+<ng-container *ngIf="address">
+  <div>
+    <a *ngIf="chainURL" [href]="chainURL" target="_blank">{{address}}</a>
+    <ng-container *ngIf="!chainURL">{{address}}</ng-container>
+    <span *ngIf="chain"> on {{chainName}}</span>
+  </div>
+  <div *ngIf="confirmed">Confirmed!</div>
+</ng-container>

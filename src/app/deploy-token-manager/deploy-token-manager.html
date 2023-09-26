@@ -1,0 +1,75 @@
+<style>
+  label {
+    display: block;
+  }
+</style>
+<h2>Deploy Token Managers</h2>
+<div>
+  Currently connected as
+  <app-explorer [address]="address()" [chain]="network()" />
+</div>
+<p>This is a tool to demonstrate the process of turning tokens into Interchain tokens!</p>
+<p>Follow the steps:</p>
+<h2>Setup your Token Managers</h2>
+<p>
+  <strong>Step 1</strong> Deploy your tokens. Your tokens must be able to grant mint/burn permissions to the future
+  Token Manager.
+</p>
+<ol>
+  <li>
+    Deploy to Chain 1 <button (click)="createToken(1)">Create</button>
+    <app-explorer
+      *ngIf="tokenAddresses[1]"
+      [address]="tokenAddresses[1]['address']"
+      [chain]="tokenAddresses[1]['chain']"
+    ></app-explorer>
+  </li>
+  <li>
+    Deploy to Chain 2 <button (click)="createToken(2)">Create</button>
+    <app-explorer
+      *ngIf="tokenAddresses[2]"
+      [address]="tokenAddresses[2]['address']"
+      [chain]="tokenAddresses[2]['chain']"
+    ></app-explorer>
+  </li>
+</ol>
+<p><strong>Step 2</strong> Deploy token managers</p>
+<label>Token Manager Type <input type="number" value="1" #type /> </label>
+<label>
+  Token Address
+  <input type="text" #address1 [value]="(this.tokenAddresses[1] && this.tokenAddresses[1].address) || ''" />
+</label>
+<label>
+  Token 2 Address
+  <input type="text" #address2 [value]="(this.tokenAddresses[2] && this.tokenAddresses[2].address) || ''" />
+</label>
+<label>
+  Token 2 Chain
+  <input
+    type="text"
+    #chain2
+    [value]="(this.tokenAddresses[2] && calculateChainName(this.tokenAddresses[2].chain)) || ''"
+  />
+</label>
+<button
+  (click)="
+        createTokenManagers(
+          type.value,
+          address1.value,
+          address2.value,
+          chain2.value
+        )
+      "
+>
+  Create
+</button>
+<p>
+  Calling create here will call "deployCustomTokenManager" on the ITS for the token on the currently selected
+  blockchain, and then call "deployRemoteCustomTokenManager" on the local ITS, which initiates a message to the ITS on
+  the target blockchain and creates a corresponding token manager there.
+</p>
+<app-explorer *ngIf="tokenManagerAddress" [address]="tokenManagerAddress" [chain]="network()"></app-explorer>
+<p><strong>Step 3</strong> Give permissions on your tokens to the token manager</p>
+<h2>Send your interchain tokens</h2>
+<p><strong>Step 2</strong> Approve the token manager to spend some of your tokens</p>
+<p><strong>Step 3</strong> sendToken on the Token Manager!</p>

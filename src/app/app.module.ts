@@ -17,7 +17,13 @@ import { MatSidenavModule } from '@angular/material/sidenav';
     RouterModule.forRoot([
       { path: '', component: HomeComponent },
       { path: 'abis', component: AbisComponent },
-      { path: 'token-managers', loadComponent:() => import('./deploy-token-manager/deploy-token-manager.component').then(mod => mod.DeployTokenManagerComponent)}
+      {
+        path: 'token-managers',
+        loadComponent: () =>
+          import('./deploy-token-manager/deploy-token-manager.component').then(
+            (mod) => mod.DeployTokenManagerComponent
+          ),
+      },
     ]),
     BrowserAnimationsModule,
     MatToolbarModule,
