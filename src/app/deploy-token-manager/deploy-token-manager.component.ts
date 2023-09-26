@@ -1,4 +1,4 @@
-import { Component, signal } from '@angular/core';
+import { ChangeDetectorRef, Component, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 
 import { ethers, ContractFactory } from 'ethers';
@@ -36,16 +36,18 @@ export class DeployTokenManagerComponent {
 
   calculateAxelarName = calculateAxelarName;
 
-  constructor() {
+  constructor(private changeDetector: ChangeDetectorRef) {
     this.ethereum.on('accountsChanged', (accounts: string[]) => {
       console.log('changing account', accounts);
       this.address.set(accounts[0]);
+      this.changeDetector.detectChanges();
     });
     this.ethereum.on('chainChanged', (chain: any) => {
       console.log('chain changed to', chain);
       console.log('this is #', ethers.BigNumber.from(chain).toNumber());
       this.network.set(ethers.BigNumber.from(chain).toNumber());
       this.connect();
+      this.changeDetector.detectChanges();
     });
     this.connect();
   }
@@ -117,14 +119,15 @@ export class DeployTokenManagerComponent {
       const TID = claimEvent.args[0];
       console.log(TID, 'is your TokenID');
 
-      const tokenManagerAddress = await this.ITSContract['getTokenManagerAddress'](TID);
-      console.log('TmAddress SHOULD BE', tokenManagerAddress);
+      this.tokenManagerAddress = await this.ITSContract['getTokenManagerAddress'](TID);
+      console.log('TmAddress SHOULD BE', this.tokenManagerAddress);
+      // this.changeDetector.detectChanges();
 
       localStorage['tokenManager'] = JSON.stringify({
         salt: salt,
         token: address1,
         id: TID,
-        tokenManager: tokenManagerAddress,
+        tokenManager: this.tokenManagerAddress,
       });
 
       // Now trigger the remote one!
